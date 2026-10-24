@@ -1,97 +1,95 @@
-# Tá Passando — EPG
+# Tá Passando
 
-Guia de programação de TV: aplicativo mobile (Ionic + Angular + Capacitor) e uma
-API intermediária em Node.js/TypeScript que baixa um documento **XMLTV**,
-normaliza a grade e serve JSON ao app.
+Guia de programação de TV. App mobile (Ionic + Angular + Capacitor) e uma API
+intermediária (Fastify) que baixa o XMLTV público e serve JSON ao app.
 
 ```
 projects/
-├── epg-api/    # Fastify: baixa o XMLTV, normaliza e faz cache
-└── epg-app/    # Ionic + Angular standalone + Capacitor
+├── epg-api/   # Fastify + XMLTV
+└── epg-app/   # Ionic + Angular standalone + Capacitor
 ```
-
-## Decisões do MVP
-
-- **O app fala só com a API própria.** A fonte da grade é um XMLTV público
-  (`https://epg.pw/xmltv/epg_BR.xml`), sem token; o app nunca baixa o XML.
-- **Sem banco, sem Redis e sem login.** Favoritos são locais
-  (`@capacitor/preferences`), cache é um snapshot em memória.
-- **Normalização no backend.** O app nunca vê XMLTV; recebe apenas `Channel`,
-  `Program` e `NowPlaying`.
-- **A fonte cobre ~2 dias em UTC**, não uma semana. No fuso local isso vira
-  até 3 dias parciais; a tela mostra os dias que existirem e a API não tem
-  parâmetro de semana.
 
 ## Requisitos
 
-- Node.js 24.15+ (o Angular 22 exige; use `nvm use 24`)
-- JDK 21 e Android SDK, apenas para o build Android
+- Node.js 24+
+- Android: JDK 21 (com `javac`, não só JRE) e Android SDK com platform 36 e
+  build-tools 36
 
-## Subindo
+## Rodando
 
-Terminal 1 — provedor simulado (útil sem rede):
+API:
 
 ```bash
 cd projects/epg-api
 npm install
-npm run mock            # http://localhost:4010/epg.xml
-```
-
-Terminal 2 — API:
-
-```bash
-cd projects/epg-api
-# a única variável obrigatória é EPG_XMLTV_URL (tabela no README do api).
-# para usar o mock:
-EPG_XMLTV_URL=http://localhost:4010/epg.xml npm run dev   # http://localhost:3000
-```
-
-Sem definir a variável, a API usa o feed real:
-
-```bash
 EPG_XMLTV_URL=https://epg.pw/xmltv/epg_BR.xml npm run dev
 ```
 
-Terminal 3 — app:
+Sem internet, use o provedor simulado:
+
+```bash
+npm run mock                                   # terminal 1
+EPG_XMLTV_URL=http://localhost:4010/epg.xml npm run dev   # terminal 2
+```
+
+App:
 
 ```bash
 cd projects/epg-app
 npm install
-npx ionic serve         # http://localhost:8100
+npm start
 ```
+
+O app chama `http://localhost:3000` em desenvolvimento (`src/environments`).
+
+## API
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| GET | `/health` | Status do snapshot XMLTV |
+| GET | `/api/channels` | Canais (com `location` quando o nome traz a praça) |
+| GET | `/api/channels/:channelId/programs` | Grade do canal |
+| GET | `/api/programs/now?channelIds=a,b` | No ar agora (filtro opcional) |
+| GET | `/api/programs/:programId` | Detalhe do programa |
+
+Variáveis de ambiente: `EPG_XMLTV_URL` (obrigatória), `CACHE_TTL`,
+`UPSTREAM_TIMEOUT_MS`, `XMLTV_MAX_BYTES`.
+
+## Fonte dos dados
+
+XMLTV público do epg.pw. Sem token ou chave de API. Limitações da fonte, que
+aparecem na interface:
+
+- cobertura de ~2 dias em UTC (até 3 dias parciais no fuso de Brasília)
+- 59% dos programas sem sinopse
+- sem categoria, logo, avaliação ou país
+- nomes prefixados pela praça (`São Paulo/SP Record News`); 25 nomes colidem
+  sem separar a praça
 
 ## Testes
 
 ```bash
-cd projects/epg-api
-npm test        # 25 testes de integração (node:test, sem deps extras)
+cd projects/epg-api && npm test      # 25 testes de integração
+cd projects/epg-app && npm run e2e   # 10 passos de UI
 ```
 
-A integração sobe a API compilada contra o mock em portas efêmeras: normalização
-do XMLTV, de-duplicação, "AGORA", cache com `304`, snapshot antigo em caso de
-queda e falhas do provedor (HTTP 500, XML malformado, timeout, documento grande).
-Detalhes em `projects/epg-api/README.md`.
+`npm run e2e` usa Playwright se instalado, ou `E2E_CHROMIUM_PATH` apontando
+para um Chromium.
 
-O app tem um teste de UI em navegador real, opcional (Playwright):
+## Android
 
 ```bash
 cd projects/epg-app
-npm i -D playwright && npx playwright install chromium
-npx ionic serve            # em outro terminal
-npm run e2e
+npm run build
+npx cap sync android
+cd android && ./gradlew assembleDebug
 ```
 
-Detalhes de cada projeto nos READMEs próprios:
-[`projects/epg-api/README.md`](projects/epg-api/README.md) ·
-[`projects/epg-app/README.md`](projects/epg-app/README.md)
+APK: `android/app/build/outputs/apk/debug/app-debug.apk`.
 
-## O que ainda depende de você
+O Gradle precisa do SDK localizado; use `ANDROID_HOME` ou um
+`android/local.properties` com `sdk.dir=<caminho do SDK>`. Para o app alcançar
+a API rodando na máquina: `adb reverse tcp:3000 tcp:3000`.
 
-- **`EPG_XMLTV_URL`**: o feed padrão é público e já funciona, mas nada garante
-  disponibilidade ou estabilidade — é um serviço gratuito de terceiros.
-- **`appId` do Android**: `com.example.epg` é um placeholder.
-- **Cobertura de ~2 dias**: se você precisar de uma semana, essa fonte não
-  atende; seria necessário outro provedor (pago) ou acumular snapshots.
-- **Build Android**: verificado. O APK de debug sai em
-  `projects/epg-app/android/app/build/outputs/apk/debug/app-debug.apk`
-  (4,9 MB). Para rodar em aparelho/emulador, veja o README do app.
+Antes de publicar: troque o `appId` (`com.example.epg`), configure HTTPS em
+`src/environments/environment.prod.ts` e assine com uma keystore própria.
