@@ -1,0 +1,84 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Canais</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="toggleFavoritesOnly()" [attr.aria-pressed]="favoritesOnly()">
+        <ion-icon
+          slot="icon-only"
+          [name]="favoritesOnly() ? 'star' : 'star-outline'"
+          [color]="favoritesOnly() ? 'warning' : 'medium'"
+        ></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <ion-toolbar>
+    <ion-searchbar
+      placeholder="Buscar canal"
+      debounce="150"
+      (ionInput)="onSearch($event)"
+    ></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  @if (loading()) {
+    <div class="state">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Carregando canais…</p>
+    </div>
+  } @else if (error(); as message) {
+    <div class="state state--error">
+      <p>{{ message }}</p>
+      <ion-button fill="outline" (click)="load()">Tentar novamente</ion-button>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="state">
+      <p>
+        @if (favoritesOnly() && favoriteCount() === 0) {
+          Você ainda não favoritou nenhum canal.
+        } @else {
+          Nenhum canal encontrado.
+        }
+      </p>
+    </div>
+  } @else {
+    <ion-list lines="none">
+      @for (channel of filtered(); track channel.id) {
+        <ion-item
+          button
+          lines="none"
+          [detail]="false"
+          class="channel-item"
+          [routerLink]="['/schedule', channel.id]"
+          [state]="{ channel }"
+        >
+          <ion-label class="channel-item__label">
+            <span class="channel-item__name">{{ channel.name }}</span>
+            @if (channel.location) {
+              <span class="channel-item__location">{{ channel.location }}</span>
+            }
+          </ion-label>
+
+          <ion-button
+            slot="end"
+            fill="clear"
+            class="channel-item__favorite"
+            [attr.aria-label]="isFavorite(channel.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+            (click)="toggleFavorite($event, channel.id)"
+          >
+            <ion-icon
+              slot="icon-only"
+              [name]="isFavorite(channel.id) ? 'star' : 'star-outline'"
+              [color]="isFavorite(channel.id) ? 'warning' : 'medium'"
+            ></ion-icon>
+          </ion-button>
+        </ion-item>
+      }
+    </ion-list>
+  }
+</ion-content>

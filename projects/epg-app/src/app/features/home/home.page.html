@@ -1,0 +1,106 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Agora</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="toggleFavoritesOnly()" [attr.aria-pressed]="favoritesOnly()">
+        <ion-icon
+          slot="icon-only"
+          [name]="favoritesOnly() ? 'star' : 'star-outline'"
+          [color]="favoritesOnly() ? 'warning' : 'medium'"
+        ></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  @if (loading()) {
+    <div class="state">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Carregando o que está no ar…</p>
+    </div>
+  } @else if (error(); as message) {
+    <div class="state state--error">
+      <p>{{ message }}</p>
+      <ion-button fill="outline" (click)="load()">Tentar novamente</ion-button>
+    </div>
+  } @else if (isEmpty()) {
+    <div class="state">
+      <p>
+        @if (favoritesOnly() && favoriteCount() === 0) {
+          Marque canais como favoritos para vê-los aqui.
+        } @else {
+          Nenhum programa no ar no momento.
+        }
+      </p>
+    </div>
+  } @else {
+    <ion-list lines="none">
+      @for (entry of entries(); track entry.program.id) {
+        <ion-item
+          button
+          [routerLink]="['/program', entry.program.id]"
+          [state]="{ program: entry.program, channelName: entry.channelName }"
+          [detail]="false"
+          class="now-item"
+        >
+          <div class="now-item__body" slot="start">
+            <div class="now-item__head">
+              <span class="now-item__channel">
+                {{ entry.channelName }}
+                @if (entry.channelLocation) {
+                  <span class="now-item__location">{{ entry.channelLocation }}</span>
+                }
+              </span>
+              <ion-button
+                fill="clear"
+                size="small"
+                class="now-item__favorite"
+                (click)="toggleFavorite($event, entry.channelId)"
+              >
+                <ion-icon
+                  slot="icon-only"
+                  [name]="isFavorite(entry.channelId) ? 'star' : 'star-outline'"
+                  [color]="isFavorite(entry.channelId) ? 'warning' : 'medium'"
+                ></ion-icon>
+              </ion-button>
+            </div>
+
+            <span class="now-item__title">{{ entry.program.title }}</span>
+
+            <div class="now-item__meta">
+              <span>{{ entry.program.start * 1000 | date: 'HH:mm' }}</span>
+              <span aria-hidden="true">–</span>
+              <span>{{ entry.program.stop * 1000 | date: 'HH:mm' }}</span>
+              <span class="now-item__duration">
+                {{ entry.program.start | duration: entry.program.stop }}
+              </span>
+            </div>
+
+            <ion-progress-bar
+              class="now-item__progress"
+              [value]="progress(entry.program)"
+            ></ion-progress-bar>
+
+            @if (entry.program.category; as category) {
+              <div class="now-item__tags">
+                <ion-badge color="medium">{{ category }}</ion-badge>
+              </div>
+            }
+
+            @if (entry.next; as next) {
+              <div class="now-item__next">
+                <span class="now-item__next-label">A seguir</span>
+                <span>{{ next.start * 1000 | date: 'HH:mm' }} · {{ next.title }}</span>
+              </div>
+            }
+          </div>
+        </ion-item>
+      }
+    </ion-list>
+  }
+</ion-content>

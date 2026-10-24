@@ -1,0 +1,7 @@
+{
+  "name": "epg-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}

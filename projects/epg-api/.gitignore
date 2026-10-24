@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+
+# O .env.example também fica de fora do Git de propósito: a URL base do
+# provedor é configuração sua, não do repositório. As variáveis estão
+# documentadas no README.
+.env.example
+*.log
+.DS_Store
+coverage/
+.vscode/
+.idea/
+*.swp
+*.swo

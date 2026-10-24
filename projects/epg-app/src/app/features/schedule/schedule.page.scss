@@ -1,0 +1,121 @@
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 60vh;
+  padding: 24px;
+  text-align: center;
+  color: var(--ion-color-medium);
+}
+
+.state--error {
+  color: var(--ion-color-danger, #c5000f);
+}
+
+.day-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 12px;
+  scrollbar-width: none;
+}
+
+.day-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.day-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  min-width: 68px;
+  padding: 6px 10px;
+  border: 1px solid var(--ion-color-light-shade, #d3d3d3);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ion-color-medium);
+  font: inherit;
+  cursor: pointer;
+}
+
+.day-chip--active {
+  border-color: var(--ion-color-primary);
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast, #fff);
+}
+
+.day-chip__weekday {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.day-chip__label {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.program-item {
+  --inner-padding-end: 8px;
+  --min-height: 0;
+}
+
+.program-item--current {
+  --background: rgba(var(--ion-color-primary-rgb), 0.08);
+}
+
+.program-item__time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 68px;
+  padding-right: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.program-item__hour {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ion-color-medium-shade);
+}
+
+.program-item--current .program-item__hour {
+  color: var(--ion-color-danger, #c5000f);
+}
+
+.program-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 0;
+}
+
+.program-item__title {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.program-item__subtitle {
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+}
+
+.program-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+}
+
+.program-item__category {
+  color: var(--ion-color-primary);
+}

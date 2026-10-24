@@ -1,0 +1,100 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/channels"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ channelName() || 'Programação' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        (click)="toggleFavorite()"
+        [attr.aria-label]="isFavorite() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+      >
+        <ion-icon
+          slot="icon-only"
+          [name]="isFavorite() ? 'star' : 'star-outline'"
+          [color]="isFavorite() ? 'warning' : 'medium'"
+        ></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  @if (days().length > 1) {
+    <ion-toolbar>
+      <div class="day-strip" role="tablist">
+        @for (day of days(); track day.key) {
+          <button
+            type="button"
+            role="tab"
+            class="day-chip"
+            [class.day-chip--active]="day.key === selectedDay()"
+            [attr.aria-selected]="day.key === selectedDay()"
+            (click)="selectDay(day.key)"
+          >
+            <span class="day-chip__weekday">{{ day.weekday }}</span>
+            <span class="day-chip__label">{{ day.label }}</span>
+          </button>
+        }
+      </div>
+    </ion-toolbar>
+  }
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  @if (loading()) {
+    <div class="state">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Carregando programação…</p>
+    </div>
+  } @else if (error(); as message) {
+    <div class="state state--error">
+      <p>{{ message }}</p>
+      <ion-button fill="outline" (click)="load()">Tentar novamente</ion-button>
+    </div>
+  } @else if (visiblePrograms().length === 0) {
+    <div class="state">
+      <p>Sem programação disponível para este canal.</p>
+    </div>
+  } @else {
+    <ion-list lines="none">
+      @for (program of visiblePrograms(); track program.id) {
+        <ion-item
+          button
+          lines="none"
+          [detail]="false"
+          class="program-item"
+          [class.program-item--current]="isCurrent(program)"
+          [routerLink]="['/program', program.id]"
+          [state]="{ program, channelName: channelName() }"
+        >
+          <div class="program-item__time" slot="start">
+            <span class="program-item__hour">{{ program.start * 1000 | date: 'HH:mm' }}</span>
+            @if (isCurrent(program)) {
+              <ion-badge color="danger">AGORA</ion-badge>
+            }
+          </div>
+
+          <div class="program-item__body">
+            <span class="program-item__title">{{ program.title }}</span>
+
+            @if (program.subtitle) {
+              <span class="program-item__subtitle">{{ program.subtitle }}</span>
+            }
+
+            <div class="program-item__meta">
+              <span>{{ program.start | duration: program.stop }}</span>
+              @if (program.category) {
+                <span class="program-item__category">{{ program.category }}</span>
+              }
+            </div>
+          </div>
+
+          <ion-icon slot="end" name="chevron-forward" color="medium"></ion-icon>
+        </ion-item>
+      }
+    </ion-list>
+  }
+</ion-content>

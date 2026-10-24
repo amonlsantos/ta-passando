@@ -1,0 +1,89 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/now"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Programa</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  @if (loading()) {
+    <div class="state">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Carregando detalhes…</p>
+    </div>
+  } @else if (error(); as message) {
+    <div class="state state--error">
+      <p>{{ message }}</p>
+      <ion-button fill="outline" (click)="retry()">Tentar novamente</ion-button>
+    </div>
+  } @else if (program(); as item) {
+    <article class="program">
+      <div class="program__content">
+        <div class="program__badges">
+          @if (isCurrent()) {
+            <ion-badge color="danger">NO AR</ion-badge>
+          }
+          @if (item.category) {
+            <ion-badge color="tertiary">{{ item.category }}</ion-badge>
+          }
+        </div>
+
+        <h1 class="program__title">{{ item.title }}</h1>
+
+        @if (item.subtitle) {
+          <p class="program__subtitle">{{ item.subtitle }}</p>
+        }
+
+        @if (channelName()) {
+          <p class="program__channel">{{ channelName() }}</p>
+        }
+
+        <dl class="program__facts">
+          <div class="program__fact">
+            <dt>Data</dt>
+            <dd>{{ longDate(item.start) }}</dd>
+          </div>
+          <div class="program__fact">
+            <dt>Horário</dt>
+            <dd>
+              {{ item.start * 1000 | date: 'HH:mm' }} – {{ item.stop * 1000 | date: 'HH:mm' }}
+            </dd>
+          </div>
+          <div class="program__fact">
+            <dt>Duração</dt>
+            <dd>{{ item.start | duration: item.stop }}</dd>
+          </div>
+          @if (item.year) {
+            <div class="program__fact">
+              <dt>Ano</dt>
+              <dd>{{ item.year }}</dd>
+            </div>
+          }
+        </dl>
+
+        @if (isCurrent()) {
+          <ion-progress-bar class="program__progress" [value]="progress()"></ion-progress-bar>
+        }
+
+        @if (item.genres.length > 0) {
+          <div class="program__genres">
+            @for (genre of item.genres; track genre) {
+              <ion-chip>
+                <ion-label>{{ genre }}</ion-label>
+              </ion-chip>
+            }
+          </div>
+        }
+
+        @if (item.description) {
+          <section class="program__section">
+            <h2>Sinopse</h2>
+            <p>{{ item.description }}</p>
+          </section>
+        }
+      </div>
+    </article>
+  }
+</ion-content>
