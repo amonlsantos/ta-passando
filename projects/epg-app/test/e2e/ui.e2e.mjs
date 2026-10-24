@@ -1,6 +1,6 @@
 /**
- * End-to-end UI test: the Angular app in a real browser against the API and
- * the mock provider.
+ * End-to-end UI test: the Angular app in a real browser, fed by a local XMLTV
+ * fixture. No backend needed: the XMLTV request is intercepted.
  *
  * Prerequisites (playwright is intentionally not a project dependency, so
  * `npm install` stays light):
@@ -11,19 +11,10 @@
  * Then, with the web app already running:
  *
  *   E2E_URL=http://localhost:8100 npm run e2e
- *
- * The script starts the mock XMLTV provider and the API itself, so the only
- * thing you need running is the web app (`npx ionic serve` or `npm start`).
  */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const here = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(here, '..', '..');
-const apiProject = path.resolve(projectRoot, '..', 'epg-api');
+import { buildFixtureXml } from './fixture.mjs';
 
 const E2E_URL = process.env.E2E_URL ?? 'http://localhost:8100';
 const E2E_TIMEOUT = Number(process.env.E2E_TIMEOUT ?? 60000);
@@ -66,42 +57,6 @@ function chromiumLaunchOptions() {
   return executablePath ? { executablePath } : {};
 }
 
-async function startProviderAndApi() {
-  const mock = spawn(process.execPath, [path.join(apiProject, 'test', 'mock-epg.mjs')], {
-    cwd: apiProject,
-    stdio: ['ignore', 'ignore', 'inherit'],
-  });
-
-  const api = spawn(process.execPath, [path.join(apiProject, 'dist', 'server.js')], {
-    cwd: apiProject,
-    env: {
-      ...process.env,
-      EPG_XMLTV_URL: process.env.EPG_XMLTV_URL ?? 'http://localhost:4010/epg.xml',
-      PORT: process.env.API_PORT ?? '3000',
-      HOST: '0.0.0.0',
-      NODE_ENV: 'development',
-    },
-    stdio: ['ignore', 'ignore', 'inherit'],
-  });
-
-  const deadline = Date.now() + 15000;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${process.env.API_PORT ?? 3000}/health`);
-      if (response.ok) {
-        return { mock, api };
-      }
-    } catch {
-      // not up yet
-    }
-    await wait(200);
-  }
-
-  mock.kill('SIGKILL');
-  api.kill('SIGKILL');
-  throw new Error('API did not become healthy in time');
-}
-
 const results = [];
 
 async function step(name, body) {
@@ -118,7 +73,7 @@ async function step(name, body) {
 
 async function main() {
   const { chromium } = await loadPlaywright();
-  const { mock, api } = await startProviderAndApi();
+  const fixture = buildFixtureXml();
 
   const consoleErrors = [];
   let browser;
@@ -133,6 +88,16 @@ async function main() {
       }
     });
     page.on('pageerror', (error) => consoleErrors.push(String(error)));
+
+    await page.route(
+      (url) => url.pathname.endsWith('.xml'),
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'text/xml; charset=utf-8',
+          body: fixture,
+        }),
+    );
 
     const nowItems = () => page.locator('app-home ion-item.now-item:visible');
     const channelItems = () => page.locator('app-channels ion-item.channel-item:visible');
@@ -312,8 +277,6 @@ async function main() {
     });
   } finally {
     await browser?.close();
-    mock.kill('SIGKILL');
-    api.kill('SIGKILL');
   }
 
   const failed = results.filter((result) => !result.ok);

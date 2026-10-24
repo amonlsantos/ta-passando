@@ -1,6 +1,21 @@
-import type { Channel } from './channel.model';
-import type { Program } from './program.model';
-import type { XmltvChannel, XmltvProgramme } from '../schemas/xmltv.schema';
+import type { Channel } from '../models/channel.model';
+import type { Program } from '../models/program.model';
+
+export interface XmltvChannel {
+  '@_id': string;
+  'display-name'?: unknown;
+}
+
+export interface XmltvProgramme {
+  '@_channel': string;
+  '@_start': string;
+  '@_stop': string;
+  title?: unknown;
+  'sub-title'?: unknown;
+  desc?: unknown;
+  category?: unknown;
+  date?: unknown;
+}
 
 const XMLTV_DATETIME = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\s*(?:([+-])(\d{2})(\d{2}))?$/;
 

@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000',
+  xmltvUrl: 'https://epg.pw/xmltv/epg_BR.xml',
 };
