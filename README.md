@@ -92,5 +92,6 @@ Detalhes de cada projeto nos READMEs próprios:
 - **`appId` do Android**: `com.example.epg` é um placeholder.
 - **Cobertura de ~2 dias**: se você precisar de uma semana, essa fonte não
   atende; seria necessário outro provedor (pago) ou acumular snapshots.
-- **Build Android**: o código está pronto, mas nunca foi compilado nesta
-  máquina por falta do SDK.
+- **Build Android**: verificado. O APK de debug sai em
+  `projects/epg-app/android/app/build/outputs/apk/debug/app-debug.apk`
+  (4,9 MB). Para rodar em aparelho/emulador, veja o README do app.

@@ -1,4 +1,4 @@
-# EPG App
+# Tá Passando — App
 
 Aplicativo mobile de guia de programação (EPG) com **Ionic 9 + Angular 22
 (standalone) + Capacitor**. Ele consome **apenas** a API intermediária em
@@ -117,13 +117,40 @@ src/app/
 ```bash
 npm run build
 npx cap sync android
-npx cap open android      # requer Android Studio + SDK
-npx cap run android       # emulador/dispositivo conectado
+cd android && ./gradlew assembleDebug
+# APK: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Build verificado nesta máquina: **4,9 MB**, `com.example.epg`, `minSdk 24`,
+`targetSdk 36`, assinado com a chave de debug.
+
+Pré-requisitos usados:
+
+- SDK em `~/Android/Sdk` com `platforms;android-36`, `build-tools;36.0.0` e
+  `platform-tools`; `android/local.properties` aponta `sdk.dir` para ele
+  (o arquivo é ignorado pelo Git).
+- JDK 21 **completo** em `~/.local/jdk21`.
+
+> **WSL:** o `java` do `PATH` pode ser um wrapper que chama o `java.exe` do
+> Windows. Ele não resolve caminhos Linux e o Gradle falha com
+> `ClassNotFoundException`. Force o JDK Linux:
+>
+> ```bash
+> export JAVA_HOME="$HOME/.local/jdk21"
+> export PATH="$JAVA_HOME/bin:$PATH"
+> ```
+
+Para instalar e abrir em um emulador/dispositivo:
+
+```bash
+npx cap run android       # precisa de device conectado ou AVD
+# ou
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+adb reverse tcp:3000 tcp:3000   # para o app alcançar a API local
 ```
 
 O `appId` é `com.example.epg` em `capacitor.config.ts` — troque antes de
-publicar. O build Gradle exige JDK 21 e o Android SDK, que **não** estão
-nesta máquina.
+publicar.
 
 `android/app/src/debug/AndroidManifest.xml` libera tráfego HTTP em claro
 (`usesCleartextTraffic`) só no build de **debug**, para permitir o backend local
